@@ -1,0 +1,22 @@
+# Visual Studio
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Build output
+[Bb]in/
+[Oo]bj/
+
+# Test output
+[Tt]est[Rr]esult*/
+*.trx
+
+# NuGet
+*.nupkg
+.nuget/
+
+# IDE and local tooling
+.idea/
+.vscode/
