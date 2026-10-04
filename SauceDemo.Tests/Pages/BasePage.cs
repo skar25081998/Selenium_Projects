@@ -15,6 +15,9 @@ public abstract class BasePage(IWebDriver driver)
             return element.Displayed ? element : null;
         })!;
 
+    protected void WaitForPageLoad() =>
+        Wait.Until(d => ((IJavaScriptExecutor)d).ExecuteScript("return document.readyState")?.ToString() == "complete");
+
     protected void Click(By locator) => FindVisible(locator).Click();
 
     protected void EnterText(By locator, string value)
