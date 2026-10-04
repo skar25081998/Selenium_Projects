@@ -1,39 +1,12 @@
-using OpenQA.Selenium;
-using OpenQA.Selenium.Chrome;
-using SauceDemo.Tests.Pages;
-
 namespace SauceDemo.Tests.Tests;
 
 [TestFixture]
-public sealed class SauceDemoScenarios
+public sealed class SauceDemoScenarios : BaseTest
 {
-    private const string Username = "standard_user";
-    private const string Password = "secret_sauce";
-    private IWebDriver _driver = null!;
-
-    [SetUp]
-    public void SetUp()
-    {
-        var options = new ChromeOptions();
-        options.AddArgument("--headless=new");
-        options.AddArgument("--window-size=1920,1080");
-        _driver = new ChromeDriver(options);
-        _driver.Manage().Timeouts().ImplicitWait = TimeSpan.Zero;
-    }
-
-    [TearDown]
-    public void TearDown()
-    {
-        _driver?.Quit();
-        _driver?.Dispose();
-    }
-
     [Test]
     public void ValidUserCanLogInAndSeeAllProducts()
     {
-        var inventory = Login();
-
-        Assert.That(inventory.ProductNames, Has.Count.EqualTo(6));
+        Assert.That(Inventory.ProductNames, Has.Count.EqualTo(6));
     }
 
     [TestCase("az", "Sauce Labs Backpack", "Test.allTheThings() T-Shirt (Red)", TestName = "Products_sort_by_name_ascending")]
@@ -42,52 +15,56 @@ public sealed class SauceDemoScenarios
     [TestCase("hilo", "Sauce Labs Fleece Jacket", "Sauce Labs Onesie", TestName = "Products_sort_by_price_descending")]
     public void InventoryCanBeSorted(string sortOption, string expectedFirst, string expectedLast)
     {
-        var inventory = Login();
+        Inventory.SortBy(sortOption);
+        var productNames = Inventory.ProductNames;
 
-        inventory.SortBy(sortOption);
-
-        Assert.That(inventory.ProductNames.First(), Is.EqualTo(expectedFirst));
-        Assert.That(inventory.ProductNames.Last(), Is.EqualTo(expectedLast));
+        Assert.Multiple(() =>
+        {
+            Assert.That(productNames.First(), Is.EqualTo(expectedFirst));
+            Assert.That(productNames.Last(), Is.EqualTo(expectedLast));
+        });
     }
 
     [Test]
     public void UserCanAddMultipleProductsToCart()
     {
-        var inventory = Login();
-        inventory.AddProduct("Sauce Labs Backpack");
-        inventory.AddProduct("Sauce Labs Bike Light");
+        Inventory.AddProduct("Sauce Labs Backpack");
+        Inventory.AddProduct("Sauce Labs Bike Light");
 
-        Assert.That(inventory.CartItemCount, Is.EqualTo(2));
+        Assert.That(Inventory.CartItemCount, Is.EqualTo(2));
     }
 
     [Test]
     public void UserCanRemoveProductFromInventory()
     {
-        var inventory = Login();
-        inventory.AddProduct("Sauce Labs Backpack");
-        inventory.RemoveProduct("Sauce Labs Backpack");
+        Inventory.AddProduct("Sauce Labs Backpack");
+        Inventory.RemoveProduct("Sauce Labs Backpack");
 
-        Assert.That(inventory.CartItemCount, Is.Zero);
+        Assert.That(Inventory.CartItemCount, Is.Zero);
     }
 
     [Test]
     public void UserCanReviewAndRemoveProductFromCart()
     {
-        var inventory = Login();
-        inventory.AddProduct("Sauce Labs Backpack");
-        var cart = inventory.OpenCart();
+        Inventory.AddProduct("Sauce Labs Backpack");
+        var cart = Inventory.OpenCart();
+        var productNames = cart.ProductNames;
 
-        Assert.That(cart.ProductNames, Is.EqualTo(new[] { "Sauce Labs Backpack" }));
         cart.RemoveProduct("Sauce Labs Backpack");
-        Assert.That(cart.ItemCount, Is.Zero);
+        var itemCount = cart.ItemCount;
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(productNames, Is.EqualTo(new[] { "Sauce Labs Backpack" }));
+            Assert.That(itemCount, Is.Zero);
+        });
     }
 
     [Test]
     public void UserCanCompleteCheckout()
     {
-        var inventory = Login();
-        inventory.AddProduct("Sauce Labs Backpack");
-        var checkout = inventory.OpenCart().StartCheckout();
+        Inventory.AddProduct("Sauce Labs Backpack");
+        var checkout = Inventory.OpenCart().StartCheckout();
 
         checkout.EnterInformation("Test", "User", "12345");
         checkout.FinishOrder();
@@ -98,17 +75,9 @@ public sealed class SauceDemoScenarios
     [Test]
     public void UserCanLogOut()
     {
-        var inventory = Login();
+        Inventory.Logout();
 
-        inventory.Logout();
-
-        Assert.That(_driver.Url, Is.EqualTo("https://www.saucedemo.com/"));
+        Assert.That(Driver.Url, Is.EqualTo("https://www.saucedemo.com/"));
     }
 
-    private InventoryPage Login()
-    {
-        var login = new LoginPage(_driver);
-        login.Open();
-        return login.Login(Username, Password);
-    }
 }

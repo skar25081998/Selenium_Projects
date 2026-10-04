@@ -11,9 +11,8 @@ public sealed class LoginPage(IWebDriver driver) : BasePage(driver)
         EnterText(Locators.Username, username);
         EnterText(Locators.Password, password);
         Click(Locators.LoginButton);
+        WaitForPageLoad();
         FindVisible(Locators.InventoryContainer);
         return new InventoryPage(Driver);
     }
-
-    public string ErrorMessage => FindVisible(Locators.LoginError).Text;
 }
